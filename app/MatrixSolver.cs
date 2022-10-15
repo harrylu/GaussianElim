@@ -2,7 +2,6 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using System;
-using UnityEngine;
 
 //all rows below last pivot are zero rows?
 
@@ -204,6 +203,7 @@ public class MatrixSolver<T> where T : IComparable, IEquatable<T>
 
     public List<List<T>> SolveSystem(IEnumerable<IList<T>> B, IEnumerable<T> substituteFreeParams)
     /// Solves Ax = B for x
+    // returns list of list, inner list contains the augmented part of the row
     {
         if (!isReducedEchelon)
         {
@@ -237,16 +237,26 @@ public class MatrixSolver<T> where T : IComparable, IEquatable<T>
                 }
                 else
                 {
-                    // will fill in at the end
+                    // column is pivot; we need to backsub all the free params in first
+                    // so we add a placeholder for now, go back after
                     ret.Add(null!);
                 }
             }
             freeParams.Dispose();
         }
+        else
+        {
+            // there are no non-pivots so we add placeholder for all pivots that we will fill in in next step
+            for (int col_idx = 0; col_idx < columnsIsPivot.Count(); col_idx++)
+            {
+                ret.Add(null!);
+            }
+        }
 
+        // now, go back and fill in the non-free params
         for (int col_idx = 0; col_idx < columnsIsPivot.Count(); col_idx++)
         {
-            if (ret[col_idx] == null)
+            if (ret[col_idx] is null)
             {
                 int row_idx = columnsDeterminerIdx[col_idx];    // pivot row_idx
                 ret[col_idx] = B_rows[row_idx].GetValues().ToList();
